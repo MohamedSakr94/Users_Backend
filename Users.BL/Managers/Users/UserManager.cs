@@ -1,4 +1,5 @@
-﻿using System;
+﻿using Microsoft.EntityFrameworkCore;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
@@ -19,20 +20,55 @@ namespace Users.BL
         //////////////////////////////////////////
 
         #region Getters
-        public List<UserRead_DTO> GetAll()
+        //public List<UserRead_DTO> GetAll()
+        //{
+        //    List<User> dbUsers = _unitOfWork.UserRepo.GetAll();
+        //    return dbUsers.Select(u => new UserRead_DTO
+        //    {
+        //        Id = u.Id,
+        //        FirstName = u.FirstName,
+        //        LastName = u.LastName,
+        //        Email = u.Email ?? "",
+        //        IsDisabled = u.IsDisabled,
+        //        IsAdmin = u.IsAdmin,
+        //    }).ToList();
+        //}
+        public List<UserRead_DTO> GetAll(string? searchText = null, bool? isAdmin = null, bool? isDisabled = null)
         {
             List<User> dbUsers = _unitOfWork.UserRepo.GetAll();
+
+            // Apply search filters based on parameters
+            if (!string.IsNullOrEmpty(searchText))
+            {
+                var filteredUsers2 = (from c in dbUsers
+                                      where (c.FirstName.ToLower() + " " + c.LastName.ToLower()).Contains(searchText.ToLower())
+                                      select c).ToList();
+
+                dbUsers = filteredUsers2.ToList();
+            }
+
+            if (isAdmin.HasValue)
+            {
+                var filteredUsers = dbUsers.Where(u => u.IsAdmin == isAdmin.Value);
+                dbUsers = filteredUsers.ToList();
+            }
+
+            if (isDisabled.HasValue)
+            {
+                var filteredUsers = dbUsers.Where(u => u.IsDisabled == isDisabled.Value);
+                dbUsers = filteredUsers.ToList();
+            }
+
             return dbUsers.Select(u => new UserRead_DTO
             {
                 Id = u.Id,
                 FirstName = u.FirstName,
                 LastName = u.LastName,
-                Email = u.Email,
+                Email = u.Email ?? "",
                 IsDisabled = u.IsDisabled,
                 IsAdmin = u.IsAdmin,
             }).ToList();
         }
-
         public UserRead_DTO? GetById(string id)
         {
             User? dbUser = _unitOfWork.UserRepo.GetById(id);
@@ -44,7 +80,7 @@ namespace Users.BL
                 Id = dbUser.Id,
                 FirstName = dbUser.FirstName,
                 LastName = dbUser.LastName,
-                Email = dbUser.Email,
+                Email = dbUser.Email ?? "",
                 IsDisabled = dbUser.IsDisabled,
                 IsAdmin = dbUser.IsAdmin
             };
@@ -62,15 +98,13 @@ namespace Users.BL
 
             UserRead_DTO ReadUser = new()
             {
-
                 Id = dbUser.Id,
                 FirstName= dbUser.FirstName,
                 LastName= dbUser.LastName,
-                Email = dbUser.Email,
+                Email = dbUser.Email ?? "",
                 IsDisabled = dbUser.IsDisabled,
                 IsAdmin = dbUser.IsAdmin
             };
-
             return ReadUser;
         }
 
@@ -81,7 +115,24 @@ namespace Users.BL
             UserRead_DTO user = new()
             {
                 Id = dbUser.Id,
-                Email = dbUser.Email
+                Email = dbUser.Email ?? ""
+            };
+            return user;
+        }
+
+        public UserReadWithDetails_DTO GetByIdWithDetails(string id)
+        {
+            User? dbUser = _unitOfWork.UserRepo.GetByIdWithdetails(id);
+            if (dbUser is null) return null!;
+            UserReadWithDetails_DTO user = new()
+            {
+                Id = dbUser.Id,
+                FirstName = dbUser.FirstName,
+                LastName = dbUser.LastName,
+                Email = dbUser.Email ?? "",
+                HashedPassword = dbUser.PasswordHash ?? "",
+                IsAdmin = !dbUser.IsAdmin,
+                IsDisabled = dbUser.IsDisabled,
             };
             return user;
         }
@@ -115,7 +166,7 @@ namespace Users.BL
         }
         #endregion
 
-        #region Edit Users
+        #region Edit
         public bool Update(UserUpdate_DTO user)
         {
             User? dbUser = _unitOfWork.UserRepo.GetById(user.Id);
@@ -125,7 +176,6 @@ namespace Users.BL
             dbUser.FirstName = user.FirstName;
             dbUser.LastName = user.LastName;
             dbUser.Email = user.Email;
-            dbUser.PasswordHash = Helpers.HashPassword(user.Password);
             dbUser.IsDisabled = user.IsDisabled;
             dbUser.IsAdmin = user.IsAdmin;
 

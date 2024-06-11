@@ -21,5 +21,12 @@
                 .FirstOrDefault(
                     u => u.Email == email);
         }
+
+        public User? GetByIdWithdetails(string id)
+        {
+            return _options.Set<User>()
+                .FirstOrDefault(
+                    u => u.Id == id);
+        }
     }
 }
