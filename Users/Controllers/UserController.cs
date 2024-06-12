@@ -55,8 +55,8 @@ namespace Users.Controllers
 
         [HttpGet]
         [Route("Admin")]
-        //[Authorize(AuthenticationSchemes = "JWT")]
-        public ActionResult<List<UserRead_DTO>> GetAll(string? searchText = null, bool? isAdmin = null, bool? isDisabled = null)
+        [Authorize(AuthenticationSchemes = "JWT")]
+        public ActionResult<List<UserRead_DTO>> GetAll([FromHeader(Name = "Authorization")][Required] string Authorization, string? searchText = null, bool? isAdmin = null, bool? isDisabled = null)
         {
             List<UserRead_DTO> users = _userManager.GetAll(searchText, isAdmin, isDisabled);
             return users;
@@ -81,10 +81,11 @@ namespace Users.Controllers
         [HttpPut]
         [Route("Edit")]
         [Authorize(AuthenticationSchemes = "JWT")]
-        public ActionResult Update([FromHeader(Name = "Authorization")][Required] string Authorization, [FromForm] UserUpdate_DTO user)
+        public ActionResult Update([FromHeader(Name = "Authorization")][Required] string Authorization, UserUpdate_DTO user)
         {
-            if (User.FindFirstValue(ClaimTypes.NameIdentifier) != user.Id) return StatusCode(403);
-            var userdb = _userManager.GetByIdWithDetails(user.Id);
+            //if (User.FindFirstValue(ClaimTypes.NameIdentifier) != user.Id) return StatusCode(403);
+            UserReadWithDetails_DTO userdb = _userManager.GetByIdWithDetails(user.Id);
+            if (userdb == null) return StatusCode(404);
             _userManager.Update(user);
 
             return StatusCode(202);
@@ -94,10 +95,8 @@ namespace Users.Controllers
         [HttpPost]
         [Route("Changepassword")]
         [Authorize(AuthenticationSchemes = "JWT")]
-        public ActionResult ChangePassword([FromHeader(Name = "Authorization")][Required] string Authorization, [FromForm] UserChangePassword_DTO user)
+        public ActionResult ChangePassword([FromHeader(Name = "Authorization")][Required] string Authorization, UserChangePassword_DTO user)
         {
-            if (User.FindFirstValue(ClaimTypes.NameIdentifier) != user.Id) return StatusCode(403);
-
             if (user.NewPassword == user.OldPassword || user.NewPassword != user.ConfirmPassword) return StatusCode(400);
 
             bool result = _userManager.ChangePassword(user);

@@ -20,19 +20,6 @@ namespace Users.BL
         //////////////////////////////////////////
 
         #region Getters
-        //public List<UserRead_DTO> GetAll()
-        //{
-        //    List<User> dbUsers = _unitOfWork.UserRepo.GetAll();
-        //    return dbUsers.Select(u => new UserRead_DTO
-        //    {
-        //        Id = u.Id,
-        //        FirstName = u.FirstName,
-        //        LastName = u.LastName,
-        //        Email = u.Email ?? "",
-        //        IsDisabled = u.IsDisabled,
-        //        IsAdmin = u.IsAdmin,
-        //    }).ToList();
-        //}
         public List<UserRead_DTO> GetAll(string? searchText = null, bool? isAdmin = null, bool? isDisabled = null)
         {
             List<User> dbUsers = _unitOfWork.UserRepo.GetAll();
